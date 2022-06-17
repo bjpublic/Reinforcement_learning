@@ -14,11 +14,22 @@ matplotlib==3.5.2
 scikit-learn==0.24.0
 ```
 
-## Getting started
+## 상용패키지 설치방법
+```
+git clone https://github.com/bjpublic/Reinforcement_learning.git
+cd Reinforcement_learning
+pip install -r requirements.txt
+```
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 컨텐츠
+- [1장. 환경설정]()
+- [2장. 강화학습을 배우기 위한 사전지식]()
+- [3장. 마르코프 환경과 벨만방정식의 이해]()
+- [4장. 다이나믹프로그래밍에서 강화학습으로]()
+- [5장. Q-Network]()
+- [6장. Actor-Critic]()
+- [7장. 알파고의 기본원리 - Monte Carlo Tree Search]()
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
 
 ## Add your files
 
@@ -32,17 +43,6 @@ git branch -M main
 git push -uf origin main
 ```
 
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/complexhhs/TPP_Dynamic_RL/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
 
 ## Test and Deploy
 
@@ -54,7 +54,10 @@ Use the built-in continuous integration in GitLab.
 - [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
 - [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
-***
+
+## 코드오류 및 제보
+complexhhs@gmail.com
+
 
 # Editing this README
 
@@ -80,19 +83,6 @@ Within a particular ecosystem, there may be a common way of installing things, s
 
 ## Usage
 Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
 ## Authors and acknowledgment
 Show your appreciation to those who have contributed to the project.
