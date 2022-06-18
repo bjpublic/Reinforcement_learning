@@ -1,6 +1,6 @@
 # 이론과 실습을 겸비한 다이나믹 강화학습 - 비제이퍼블릭
 
-이론과 실습을 겸비한 다이나믹 강화학습 깃랩 저장소입니다. 
+이론과 실습을 겸비한 다이나믹 강화학습  저장소입니다. 
 
 ---
 
@@ -29,30 +29,6 @@ pip install -r requirements.txt
 - [5장. Q-Network]()
 - [6장. Actor-Critic]()
 - [7장. 알파고의 기본원리 - Monte Carlo Tree Search]()
-
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/complexhhs/TPP_Dynamic_RL.git
-git branch -M main
-git push -uf origin main
-```
-
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
 
 ## 코드오류 및 제보
@@ -86,9 +62,3 @@ Use examples liberally, and show the expected output if you can. It's helpful to
 
 ## Authors and acknowledgment
 Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
