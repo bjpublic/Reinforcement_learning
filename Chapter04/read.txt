@@ -1,1 +1,1 @@
-Cartpole - MC vs TD {High-Low} {Bias-Variance}
+Randomwalk - MC vs TD {High-Low} {Bias-Variance}
