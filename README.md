@@ -6,7 +6,6 @@
 
 - 상용패키지
 ```
-torch==1.8.1
 pandas==1.4.2
 gym==0.10.5
 torchvision==0.9.1
@@ -19,6 +18,11 @@ scikit-learn==0.24.0
 git clone https://github.com/bjpublic/Reinforcement_learning.git
 cd Reinforcement_learning
 pip install -r requirements.txt
+```
+
+## 파이토치 설치방법(conda 환경)
+```
+conda install pytorch==1.8.1 -c pytorch
 ```
 
 ## 컨텐츠
