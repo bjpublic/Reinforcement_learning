@@ -25,6 +25,14 @@ pip install -r requirements.txt
 conda install pytorch==1.8.1 -c pytorch
 ```
 
+## jupyter notebook 커널 환경 업데이트
+아래 커맨드를 수행한후 jupyter notebook 새로고침 실행 -> kernel -> RL_scratch 선택!
+```
+>>> conda activate RL_scratch
+>>> pip install ipykernel
+>>> python -m ipykernel install --user --name RL_scratch --display-name RL_scratch
+```
+
 ## 컨텐츠
 - [1장. 환경설정]()
 - [2장. 강화학습을 배우기 위한 사전지식]()
