@@ -25,6 +25,12 @@ pip install -r requirements.txt
 conda install pytorch==1.8.1 -c pytorch
 ```
 
+## gym부수기능 설치
+```
+pip install gym[all]
+```
+
+
 ## jupyter notebook 커널 환경 업데이트
 아래 커맨드를 수행한후 jupyter notebook 새로고침 실행 -> kernel -> RL_scratch 선택!
 ```
