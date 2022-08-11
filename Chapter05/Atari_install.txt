@@ -1,0 +1,4 @@
+wget http://www.atarimania.com/roms/Roms.rar
+# path Roms.rar, unrar e Roms.rar
+pip install atari-py
+python -m atari_py.import_roms {your_Roms_path}

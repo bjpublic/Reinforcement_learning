@@ -28,6 +28,7 @@ conda install pytorch==1.8.1 -c pytorch
 ## gym부수기능 설치
 ```
 pip install gym[all]
+conda install -c conda-forge pyglet
 ```
 
 
