@@ -1,210 +1,241 @@
-# 코드 출처: http://inventwithpython.com/chapter10.html
-# -> 그대로 사용하지는 않고 gym과 같이 변형해서 사용
+# 출처 : https://github.com/maksimKorzh/tictactoe-mtcs/blob/master/src/tictactoe/tictactoe.py
 
-# Tic Tac Toe
-import os
-import random
-def drawBoard(board):
-    # This function prints out the board that it was passed.
-    # "board" is a list of 10 strings representing the board (ignore index 0)
-    print('   |   |')
-    print(' ' + board[7] + ' | ' + board[8] + ' | ' + board[9])
-    print('   |   |')
-    print('-----------')
-    print('   |   |')
-    print(' ' + board[4] + ' | ' + board[5] + ' | ' + board[6])
-    print('   |   |')
-    print('-----------')
-    print('   |   |')
-    print(' ' + board[1] + ' | ' + board[2] + ' | ' + board[3])
-    print('   |   |')
+# 
+# AI that learns to play Tic Tac Toe usint Reinforcement Learning
+# MCTS + NN
+# 
+# packages
+import copy
 
-def inputPlayerLetter():
-    # Lets the player type which letter they want to be.
-    # Returns a list with the player’s letter as the first item, and the computer's letter as the second.
-    letter = ''
-    while not (letter == 'X' or letter == 'O'):
-        print('Do you want to be X or O?')
-        letter = input().upper()
+# Tic Tac Toe board class
+class Board():
+    # create constructor (init board class instance)
+    def __init__(self, board=None):
+        self.player_1 = 'x'
+        self.player_2 = 'o'
+        self.empty_Square='.'
 
-    # the first element in the list is the player’s letter, the second is the computer's letter.
-    if letter == 'X':
-        return ['X', 'O']
-    else:
-        return ['O', 'X']
+        # define board position
+        self.position = {}
 
-def whoGoesFirst():
-    # Randomly choose the player who goes first.
-    if random.randint(0, 1) == 0:
-        return 'computer'
-    else:
-        return 'player'
-    
-def playAgain():
-    # This function returns True if the player wants to play again, otherwise it returns False.
-    print('Do you want to play again? (yes or no)')
-    return input().lower().startswith('y')
+        # init (reset) board
+        self.init_board()
 
-def makeMove(board, letter, move):
-    board[move] = letter
-    return board
+        # create a copy of a previous board state if available
+        if board is not None:
+            self.__dict__ = copy.deepcopy(board.__dict__)
 
-def isWinner(bo, le):
-    # Given a board and a player’s letter, this function returns True if that player has won.
-    # We use bo instead of board and le instead of letter so we don’t have to type as much.
-    return ((bo[7] == le and bo[8] == le and bo[9] == le) or # across the top
-    (bo[4] == le and bo[5] == le and bo[6] == le) or # across the middle
-    (bo[1] == le and bo[2] == le and bo[3] == le) or # across the bottom
-    (bo[7] == le and bo[4] == le and bo[1] == le) or # down the left side
-    (bo[8] == le and bo[5] == le and bo[2] == le) or # down the middle
-    (bo[9] == le and bo[6] == le and bo[3] == le) or # down the right side
-    (bo[7] == le and bo[5] == le and bo[3] == le) or # diagonal
-    (bo[9] == le and bo[5] == le and bo[1] == le)) # diagonal
+    # Init (reset) board
+    def init_board(self):
+        # loop over board rows
+        for row in range(3):
+            # loop over board columns
+            for col in range(3):
+                # sef every board square to empty square
+                self.position[row,col]=self.empty_Square
 
-def getBoardCopy(board):
-    # Make a duplicate of the board list and return it the duplicate.
-    dupeBoard = []
-    for i in board:
-        dupeBoard.append(i)
-    return dupeBoard
-
-def isSpaceFree(board, move):
-    # Return true if the passed move is free on the passed board.
-    return board[move] == ' '
-
-def getPlayerMove(board):
-    # Let the player type in their move.
-    move = ' '
-    while move not in '1 2 3 4 5 6 7 8 9'.split() or not isSpaceFree(board, int(move)):
-        print('What is your next move? (1-9)')
-        move = input()
-    return int(move)
-
-def chooseRandomMoveFromList(board, movesList):
-    # Returns a valid move from the passed list on the passed board.
-    # Returns None if there is no valid move.
-    possibleMoves = []
-    for i in movesList:
-        if isSpaceFree(board, i):
-            possibleMoves.append(i)
-
-    if len(possibleMoves) != 0:
-        return random.choice(possibleMoves)
-    else:
-        return None
-
-def getComputerMove(board, computerLetter):
-    # Given a board and the computer's letter, determine where to move and return that move.
-    if computerLetter == 'X':
-        playerLetter = 'O'
-    else:
-        playerLetter = 'X'
-
-    # Here is our algorithm for our Tic Tac Toe AI:
-    # First, check if we can win in the next move
-    for i in range(1, 10):
-        copy = getBoardCopy(board)
-        if isSpaceFree(copy, i):
-            makeMove(copy, computerLetter, i)
-            if isWinner(copy, computerLetter):
-                return i
-
-    # Check if the player could win on their next move, and block them.
-    for i in range(1, 10):
-        copy = getBoardCopy(board)
-        if isSpaceFree(copy, i):
-            makeMove(copy, playerLetter, i)
-            if isWinner(copy, playerLetter):
-                return i
-
-    # Try to take one of the corners, if they are free.
-    move = chooseRandomMoveFromList(board, [1, 3, 7, 9])
-    if move != None:
-        return move
-
-    # Try to take the center, if it is free.
-    if isSpaceFree(board, 5):
-        return 5
-    # Move on one of the sides.
-    return chooseRandomMoveFromList(board, [2, 4, 6, 8])
-
-def isBoardFull(board):
-    # Return True if every space on the board has been taken. Otherwise return False.
-    for i in range(1, 10):
-        if isSpaceFree(board, i):
-            return False
-    return True
-
-
-
-class TicTacToe():
-    reward = 0
-    is_done = False
-    Observation = [' ']*10
-    info = {
-        'Round':0,
-        'Player':'X',
-        'Winner':None
-    }
-    #def __init__(self):
-            
+    # make move
+    def make_move(self, row, col):
+        board = Board(self)
+        board.position[row,col] = self.player_1
+        # swap players
+        (board.player_1, board.player_2) = (board.player_2,board.player_1)
         
-    def reset(self):
-        self.reward = 0
-        #self.
-        self.Observation = [' ']*10
-        self.info['Round'] = 0
-        self.info['Player'] = 'X'
-        self.info['Winner'] = None
-        return self.Observation
-    
-    def render(self):
-        drawBoard(self.Observation)
+        # return new board state
+        return board
 
-    def step(self,action):
-        if self.is_done:
-            raise ValueError("Environment finished! Use .reset() option if you want to resume game")
-            return self.Observation, self.reward, self.is_done, self.info
-        # First agent move and victory check
-        possible_actions = self.valid_action()
-        if action not in possible_actions:
-            raise ValueError('Your action is not valid!')
-            return self.Observation, self.reward, self.is_done, self.info
-        self.info['Round'] += 1
-        self.info['Player'] = 'X'
-        self.NextObservation = makeMove(self.Observation,'x',action)
-        if isWinner(self.NextObservation,'x'):
-            self.reward = 1
-            self.info['Winner'] = 'X'
-            self.is_done=True
-        else:
-            if isBoardFull(self.NextObservation):
-                self.reward = 0
-                self.info['Winner'] = None
-                self.is_done=True
-            else:
-                # Second agent(computer) move and victory check
-                self.info['Round'] += 1
-                self.info['Player'] = 'O'
-                self.Observation = self.NextObservation
-                move = getComputerMove(self.Observation, 'O') # code base moving
-                self.NextObservation = makeMove(self.Observation,'O',move)
-                if isWinner(self.NextObservation,'O'):
-                    self.reward = -1
-                    self.info['Winner'] = 'O'
-                    self.is_done=True
-                else:
-                    if isBoardFull(self.NextObservation):
-                        self.reward = 0
-                        self.info['Winner'] = None
-                        self.is_done=True
-        self.Observation = self.NextObservation
-        return self.Observation, self.reward, self.is_done, self.info
+    # get whether the game is drawn
+    def is_draw(self):
+        # loop over board squares
+        for row,col in self.position:
+            # empty square is available
+            if self.position[row,col]==self.empty_Square:
+                # this is not a draw
+                return False
+        # by default we return a draw
+        return True
+
+    # get whether the game is drawn
+    def is_win(self):
+        #############################
+        # vertical sequence detection
+        #############################
+        
+        #loop over board columns
+        for col in range(3):
+            # define winning sequence list
+            winning_sequence = []
+
+            # loop over board rows:
+            for row in range(3):
+                # if found same next element in the row
+                if self.position[row, col] == self.player_2:
+                    # update winning sequence
+                    winning_sequence.append((row, col))
+                # if we have 3 elemnts in the row
+                if len(winning_sequence) == 3:
+                    # return the game is won state
+                    return True
+
+        #############################
+        # horizontal sequence detection
+        #############################
+        
+        #loop over board columns
+        for row in range(3):
+            # define winning sequence list
+            winning_sequence = []
+
+            # loop over board rows:
+            for col in range(3):
+                # if found same next element in the row
+                if self.position[row, col] == self.player_2:
+                    # update winning sequence
+                    winning_sequence.append((row, col))
+                # if we have 3 elemnts in the row
+                if len(winning_sequence) == 3:
+                    # return the game is won state
+                    return True
+
+        #############################
+        # 1st diagonal sequence detection
+        #############################
+        # define winning sequence list
+        winning_sequence = []
+        # loop over board rows:
+        for row in range(3):
+            # init column
+            col = row
+            # if found same next element in the row
+            if self.position[row, col] == self.player_2:
+                # update winning sequence
+                winning_sequence.append((row, col))
+            # if we have 3 elemnts in the row
+            if len(winning_sequence) == 3:
+                # return the game is won state
+                return True
+
+
+        #############################
+        # 2nd diagonal sequence detection
+        #############################
+        winning_sequence = []
+        # loop over board rows:
+        for row in range(3):
+            # init column
+            col = 3- row -1
+            # if found same next element in the row
+            if self.position[row, col] == self.player_2:
+                # update winning sequence
+                winning_sequence.append((row, col))
+            # if we have 3 elemnts in the row
+            if len(winning_sequence) == 3:
+                # return the game is won state
+                return True
+
+        # by default return non winning state
+        return False
+
+    # generate legal moves to play in the current position
+    def generate_states(self):
+        # define states list(move list - list of available actions to consider)
+        actions = []
+
+        # loop over  board rows
+        for row in range(3):
+            # loop over board columns
+            for col in range(3):
+                # make sure that current square is empty
+                if self.position[row, col] == self.empty_Square:
+                    # append available action/board state to action list
+                    actions.append((self.make_move(row, col)))
+
+        # return the list of available actions (board class instances)
+        return actions
+
+    # main game_loop
+    def game_loop(self, mcts=None):
+        print('  \nTic Tac Toe 게임을 시작합니다.')
+        print('   순서는 1,2처럼 타이핑하세요. 1은 "행", 2는 "열"을 의미합니다.')
+        print('   "exit"은 게임을 종료합니다.')
+
+        # print board
+        print(self)
+
+        # create MCTS instance
+
+        # game loop
+        while True:
+            # user input
+            user_input = input('>> ')
+            # escape condition
+            if str(user_input) == 'exit': break
+
+            # skip empty input
+            if user_input == '': continue
+
+            try:
+                # parse user input (move format [row, col]: 1,2)
+                row = int(user_input.split(',')[0])-1
+                col = int(user_input.split(',')[1])-1
                 
-    def valid_action(self):
-        # Let agent Knows which action is valid in current tic-tac-toe observation
-        possibleMoves = []
-        for i in range(1,10):
-            if isSpaceFree(self.Observation, i):
-                possibleMoves.append(i)
-        return possibleMoves
+                # check move legality
+                if self.position[row, col] != self.empty_Square:
+                    print(' 실행할 수 없는 행동')
+                    continue
+                
+                # make move on board
+                self = self.make_move(row,col)
+
+                # make AI move here...
+                if mcts is not None:
+                    best_move = mcts.search(self)
+                    
+                    # legal moves available
+                    try:
+                        self = best_move.board
+                    except:
+                        pass
+
+                # print board
+                print(self)
+
+                # check the game state
+                if self.is_win():
+                    print(f' 게임의 승자: "{self.player_2}"!')
+                    break
+                # check if the game is drawn
+                elif self.is_draw():
+                    print(f'무승부 게임!')
+                    break
+
+            except Exception as e:
+                print(' Error:', e)
+                print(' 실행할 수 없는 행동')
+                print('   순서는 1,2처럼 타이핑하세요. 1은 "행", 2는 "열"을 의미합니다.')
+
+
+
+    # print board state
+    def __str__(self):
+        # define board string representation
+        board_string = ''
+        # loop over board rows
+        for row in range(3):
+            # loop over board columns
+            for col in range(3):
+                board_string+=f' {self.position[row,col]} '
+            board_string += '\n'
+
+        # prepend side to move
+        if self.player_1 == 'x':
+            board_string='\n---------------\n "x" 의 차례: \n---------------\n\n'+board_string
+        elif self.player_1 == 'o':
+            board_string='\n---------------\n "o" 의 차례: \n---------------\n\n'+board_string
+        # return board string
+        return board_string
+
+if __name__ == '__main__':
+    board = Board()
+    # start game loop
+    board.game_loop()

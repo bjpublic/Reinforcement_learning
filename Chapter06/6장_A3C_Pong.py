@@ -37,6 +37,8 @@ parser.add_argument('--gamma', type=float, default=0.99,
                     help='discount factor for rewards (default: 0.99)')
 parser.add_argument('--entropy-coef', type=float, default=0.01,
                     help='entropy term coefficient (default: 0.01)')
+parser.add_argument('--max-episode-length', type=int, default=1000000,
+                    help='maximum length of an episode (default: 1000000)')
 parser.add_argument('--max-grad-norm', type=float, default=50,
                     help='value loss coefficient (default: 50)')
 parser.add_argument('--seed', type=int, default=123,
@@ -45,8 +47,6 @@ parser.add_argument('--num-processes', type=int, default=8,
                     help='how many training processes to use (default: 4)')
 parser.add_argument('--num-steps', type=int, default=20,
                     help='number of forward steps in A3C (default: 20)')
-parser.add_argument('--max-episode-length', type=int, default=1000000,
-                    help='maximum length of an episode (default: 1000000)')
 parser.add_argument('--env-name', default='PongDeterministic-v4',
                     help='environment to train on (default: PongDeterministic-v4)')
 
@@ -187,23 +187,21 @@ def A3C_loss(transition,train_agent,env,gamma=0.99,epsilon=1e-02):
     next_states = torch.Tensor(next_states).to(device)
     policies, values = train_agent(states)
     _, next_values = train_agent(next_states)
-    if done:
-        next_value = 0
     
     probs = F.softmax(policies,dim=-1)
     logprobs = F.log_softmax(policies,dim=-1)
     logp_actions = logprobs[np.arange(states.shape[0]),actions]
-    entropy = -torch.sun(probs*logprobs,dim=-1)
+    entropy = -torch.sum(probs*logprobs,dim=-1)
 
     # Calculate loss function from backstep
     R = 0
     if dones[-1] != False:
         R = next_values[-1].item()
-    values = torch.cat((values,tor4ch.Tensor([[R]]).to(device),dim=0)
+    values = torch.cat((values,torch.Tensor([[R]]).to(device)),dim=0)
 
     actor_loss, critic_loss = 0,0
     advantage, gen_delta = 0,0
-    for i in reversed(range(len(rewards)):
+    for i in reversed(range(len(rewards))):
         R = gamma*R + rewards[i]
         advantage = R - values[i]
         critic_loss += advantage**2
@@ -211,7 +209,7 @@ def A3C_loss(transition,train_agent,env,gamma=0.99,epsilon=1e-02):
         # Generalized Advantage Estimation
         delta_t = rewards[i] + gamma*values[i+1]-values[i]
         gen_delta = gamma*gen_delta+delta_t
-        actor_loss -= logp_actions[i]*gen_data.detach() + epsilon*entropy[i]
+        actor_loss -= logp_actions[i]*gen_delta.detach() + epsilon*entropy[i]
 
     total_loss = actor_loss+critic_loss
     return total_loss, actor_loss, critic_loss
@@ -224,6 +222,7 @@ def train(rank,args,shared_agent):
     reward_record = [] 
     start = time.time()
     for ep in range(args.max_episode_length):
+        #train_agent.load_state_dict(shared_agent.state_dict())
         done = False
         state = env.reset()
         total_reward = 0 
@@ -247,7 +246,7 @@ def train(rank,args,shared_agent):
                 state = next_state
                 if done:
                     if total_reward == 20:
-                        best_agent = copy.deepcopy(shared_agent)
+                        best_agent = copy.deepcopy(train_agent)
                     break
             transition = (states,actions,rewards,next_states,dones)
             loss,actor_loss,critic_loss = A3C_loss(transition,shared_agent,env,args.gamma,args.entropy_coef)
@@ -262,8 +261,8 @@ def train(rank,args,shared_agent):
             A3C_record.append([finish,total_reward]) 
 
         # Training log
-        print(f'|프로세스|{rank}|   >>>   {ep}/{total_reward}   Time: {time.strftime("%Hh %Mm %Ss",time.gmtime(finish))}') 
-        if np.mean(reward_record[-3:]) >= 20 and total_reward >= 20:
+        print(f'|프로세스|{rank}|   >>>   Reward/Episode: {total_reward}/{ep}   Time: {time.strftime("%Hh %Mm %Ss",time.gmtime(finish))}') 
+        if np.mean(reward_record[-3:]) >= 3 and total_reward >= 3:
             best_agent = copy.deepcopy(shared_agent)
             print(f" 프로세스: {rank}   >>>   보상: {np.mean(reward_record[-3:])}")
             print(f"학습종료")
@@ -298,6 +297,9 @@ def test(rank,args,shared_agent,test_games=3):
     print(f'        >> 최대보상: {np.max(reward_record)}')
 
 if __name__ == '__main__':
+    os.environ['OMP_NUM_THREADS'] = "1"
+    os.environ['CUDA_VISIBLE_DEVICES'] = ""
+
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)

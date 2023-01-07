@@ -72,7 +72,7 @@ class PreprocessAtariObs(ObservationWrapper):
     def observation(self, img):      
         img = img[34:34+160, :160]
         img = Image.fromarray(np.uint8(img),'RGB')
-        img = img.resize((64,64))
+        img = img.resize((42,42))
         img = np.array(img)
         img = self._to_gray_scale(img)/255.
         return np.array(img,dtype=np.float32).transpose((2,0,1))
@@ -104,11 +104,13 @@ def PrimaryAtariWrap(env,clip_rewards=True):
     return env
 
 # %%
-def make_env(clip_rewards=True, env_name='PongDeterministic-v4',seed=None):
+def make_env(env_name='PongDeterministic-v4',seed=None):
     env = gym.make(env_name) 
     if seed is not None:
         env.seed(seed)
-    env = PrimaryAtariWrap(env, clip_rewards)
+    env = ClipRewardEnv(env)
+    env = PreprocessAtariObs(env)    # 이미지 전처리
+    env = NormalizedEnv(env)
     return env
 
 # %%
@@ -117,13 +119,13 @@ class LSTM_A2C_Agent(nn.Module):
         super(LSTM_A2C_Agent,self).__init__()
         self.seq = nn.Sequential(
             nn.Conv2d(1, 32, 3, stride=2, padding=1),
-            nn.functional.elu(),
+            nn.ELU(),
             nn.Conv2d(32, 32, 3, stride=2, padding=1),
-            nn.functional.elu(),
+            nn.ELU(),
             nn.Conv2d(32, 32, 3, stride=2, padding=1),
-            nn.functional.elu(),
+            nn.ELU(),
             nn.Conv2d(32, 32, 3, stride=2, padding=1),
-            nn.functional.elu(),
+            nn.ELU(),
             nn.Flatten(),
         )
         self.lstm = nn.LSTMCell(32 * 3 * 3, 256) 
@@ -139,6 +141,8 @@ class LSTM_A2C_Agent(nn.Module):
             value : 가치함수([batch]), torch.tensor
         '''
         state_t, (hx,cx) = state_t
+        state_t = self.seq(state_t)
+        #print(f'shape: {state_t.shape}')
         hx, cx = self.lstm(state_t, (hx, cx))
         state_t = hx
         policy = self.policy(state_t)
@@ -152,8 +156,10 @@ class LSTM_A2C_Agent(nn.Module):
         출력인자
             action_t : 행동함수 using torch.multinomial
         '''
-        state_t,(hx,cx) = state_t
-        policy, _, _ = self.forward(state_t,(hx,cx))
+        #state_t,(hx,cx) = state_t
+        #state_t = self.seq(state_t)
+        #policy, _, _ = self.forward(state_t,(hx,cx))
+        policy, _, _ = self.forward(state_t)
         policy = torch.squeeze(policy)
         softmax_policy = F.softmax(policy,dim=0)
         action = torch.multinomial(softmax_policy, num_samples=1).item()
@@ -164,7 +170,7 @@ def LSTM_A2C_loss(transition,train_agent,env,gamma=0.99,epsilon=1e-02):
     '''
     A3C loss함수 계산코드
     입력인자
-        batch_sample - 리플레이로부터 받은 샘플(S,A,R,S',done)
+        batch_sample - 리플레이로부터 받은 샘플(S,A,R,S',done, LSTM_gate)
         train_agent - 훈련에이전트
         env - 환경
         gamma - 할인율
@@ -177,18 +183,32 @@ def LSTM_A2C_loss(transition,train_agent,env,gamma=0.99,epsilon=1e-02):
         Actor-entropy(exploration): "policy*log(policy)"
         Critic-loss: "MSE(value_infer - value_target)"
     '''
-    states,actions,rewards,next_states,dones = transition
+    states,actions,rewards,next_states,dones,lstm_gate = transition
+    hx_present, cx_present, hx_next, cx_next = lstm_gate 
     
+    # hx, cx definition
+    hx_present = torch.Tensor(hx_present).to(device)
+    cx_present = torch.Tensor(cx_present).to(device)
+    hx_next = torch.Tensor(hx_next).to(device)
+    cx_next = torch.Tensor(cx_next).to(device)
+
     states = torch.Tensor(states).to(device)
     actions = torch.LongTensor(actions).to(device)
     rewards = torch.Tensor(rewards).to(device)
     next_states = torch.Tensor(next_states).to(device)
-    policies, values = train_agent(states)
-    _, next_values = train_agent(next_states)
+    #policies, values = train_agent(states)
+    #_, next_values = train_agent(next_states)
+    # LSTM forward propagation
+    states = (states,(hx_present,cx_present))
+    next_states = (next_states,(hx_next,cx_next))
+    #policies, values, _, _ = train_agent(states, hx_present, cx_present)
+    #_, next_values, _, _ = train_agent(states, hx_next, cx_next)
+    policies, values, _ = train_agent(states)
+    _, next_values, _ = train_agent(next_states)
 
     probs = F.softmax(policies,dim=-1)
     logprobs = F.log_softmax(policies,dim=-1)
-    logp_actions = logprobs[np.arange(states.shape[0]),actions]
+    logp_actions = logprobs[np.arange(states[0].shape[0]),actions]
     entropy = -torch.sum(probs*logprobs,dim=-1)
 
     # Calculate loss function from backstep
@@ -214,7 +234,7 @@ def LSTM_A2C_loss(transition,train_agent,env,gamma=0.99,epsilon=1e-02):
     return total_loss, actor_loss, critic_loss
 
 def train(rank,args,shared_agent):
-    env = make_env(True,args.env_name,args.seed+rank)
+    env = make_env(args.env_name,args.seed+rank)
     optimizer = optim.Adam(shared_agent.parameters(),lr=args.lr)
     
     A3C_record = []
@@ -223,16 +243,27 @@ def train(rank,args,shared_agent):
     for ep in range(args.max_episode_length):
         done = False
         state = env.reset()
+        #print(f'Initial shape:{state.shape}')
         total_reward = 0 
 
+        
+        hx = torch.zeros(1,256).to(device)
         cx = torch.zeros(1,256).to(device)
-        hx = torch.zeros(1,256)to(device) 
         while not done:
             states,actions,rewards,next_states,dones = [],[],[],[],[]
+            hx_present, cx_present,hx_next, cx_next = [],[],[],[]
             for step in range(args.num_steps):
+                # hx_present, cx_present append
+                hx_present.append(hx.squeeze().detach().cpu().numpy())
+                cx_present.append(cx.squeeze().detach().cpu().numpy())
+
                 torch_state = torch.Tensor(state).to(device)
                 torch_state = torch.unsqueeze(torch_state,0)
+                
                 torch_state = (torch_state,(hx,cx))
+                #_,_,hx,cx = shared_agent(torch_state,hx,cx)
+                _,_,(hx,cx) = shared_agent(torch_state)
+                #action = shared_agent.sample_actions(torch_state,hx,cx)
                 action = shared_agent.sample_actions(torch_state)
                 next_state,reward,done,_ = env.step(action)
                 total_reward += reward
@@ -243,13 +274,19 @@ def train(rank,args,shared_agent):
                 next_states.append(next_state)
                 dones.append(done)
 
+                # hx_next, cx_next concatenate
+                hx_next.append(hx.squeeze().detach().cpu().numpy())
+                cx_next.append(cx.squeeze().detach().cpu().numpy())
+
                 # 업데이트
                 state = next_state
                 if done:
                     if total_reward == 20:
                         best_agent = copy.deepcopy(shared_agent)
                     break
-            transition = (states,actions,rewards,next_states,dones)
+            
+            LSTM_gate = (hx_present, cx_present, hx_next, cx_next)
+            transition = (states,actions,rewards,next_states,dones,LSTM_gate)
             loss,actor_loss,critic_loss = LSTM_A2C_loss(transition,shared_agent,env,args.gamma,args.entropy_coef)
             optimizer.zero_grad()
             loss.backward()
@@ -272,7 +309,7 @@ def train(rank,args,shared_agent):
             break 
 
 def test(rank,args,shared_agent,test_games=3): 
-    env = make_env(True,args.env_name,args.seed+rank)
+    env = make_env(args.env_name,args.seed+rank)
 
     reward_record = [] 
     for ep in range(test_games):
@@ -280,9 +317,14 @@ def test(rank,args,shared_agent,test_games=3):
         state = env.reset()
         total_reward = 0 
 
+        hx = torch.zeros(1,256).to(device)
+        cx = torch.zeros(1,256).to(device)
         while True:
             torch_state = torch.Tensor(state).to(device)
             torch_state = torch.unsqueeze(torch_state,0)
+            #action = shared_agent.sample_actions(torch_state)
+            torch_state = (torch_state,(hx,cx))
+            _,_,(hx,cx) = shared_agent(torch_state)
             action = shared_agent.sample_actions(torch_state)
             next_state,reward,done,_ = env.step(action)
             total_reward += reward

@@ -151,6 +151,7 @@ class TicTacToeEnv(gym.Env):
     }
     action_space = spaces.Discrete(9)
     observation_space = spaces.Discrete(9)
+    difficulty='easy'
     #def __init__(self):
     #def env(self):
     #    return self
@@ -162,6 +163,7 @@ class TicTacToeEnv(gym.Env):
         self.info['Round'] = 0
         self.info['Player'] = 'X'
         self.info['Winner'] = None
+        self.is_done=False
         return self.Observation
     
     def render(self,mode='human',close=False):
@@ -171,8 +173,9 @@ class TicTacToeEnv(gym.Env):
 
     def step(self,action):
         self.action_space = self.valid_action()
-        #assert self.action_space.contains(action)
         assert action in self.action_space
+        #if action not in self.action_space:
+        #    action = random.choice(self.action_space)
 
         if self.is_done:
             #raise ValueError("Environment finished! Use .reset() option if you want to resume game")
@@ -184,13 +187,16 @@ class TicTacToeEnv(gym.Env):
         #    return self.Observation, self.reward, self.is_done, self.info
         self.info['Round'] += 1
         self.info['Player'] = 'X'
-        self.NextObservation = makeMove(self.Observation,'x',action)
-        if isWinner(self.NextObservation,'x'):
+        #self.NextObservation = makeMove(self.Observation,'X',action)
+        self.Observation = makeMove(self.Observation,'X',action)
+        #if isWinner(self.NextObservation,'x'):
+        if isWinner(self.Observation,'x'):
             self.reward = 1
             self.info['Winner'] = 'X'
             self.is_done=True
         else:
-            if isBoardFull(self.NextObservation):
+            #if isBoardFull(self.NextObservation):
+            if isBoardFull(self.Observation):
                 self.reward = 0
                 self.info['Winner'] = None
                 self.is_done=True
@@ -198,8 +204,13 @@ class TicTacToeEnv(gym.Env):
                 # Second agent(computer) move and victory check
                 self.info['Round'] += 1
                 self.info['Player'] = 'O'
-                self.Observation = self.NextObservation
-                move = getComputerMove(self.Observation, 'O') # code base moving
+                #self.Observation = self.NextObservation
+                if self.difficulty != 'easy':
+                    #move = getComputerMove(self.NextObservation, 'O') # code base moving
+                    move = getComputerMove(self.Observation, 'O') # code base moving
+                else:
+                    self.action_space = self.valid_action()
+                    move = random.choice(self.action_space) 
                 self.NextObservation = makeMove(self.Observation,'O',move)
                 if isWinner(self.NextObservation,'O'):
                     self.reward = -1

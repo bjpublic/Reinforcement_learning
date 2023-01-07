@@ -337,7 +337,7 @@ def train(rank,args,shared_agent):
             print(f" 프로세스: {rank}   >>>   보상: {np.mean(reward_record[-3:])}")
             print(f"학습종료")
             if rank == 1:
-                np.save('./A3C_timeVSreward.npy',np.array(A3C_record))
+                np.save('./A2C_timeVSreward.npy',np.array(A3C_record))
             break 
 
 def test(rank,args,shared_agent,test_games=3): 
