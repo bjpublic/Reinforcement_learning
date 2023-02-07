@@ -1,5 +1,6 @@
 # 리플레이 버퍼 
 # https://github.com/openai/baselines/blob/master/baselines/deepq/replay_buffer.py 에서 핵심 아이디어 채용
+import numpy as np
 
 class ReplayBuffer(object):
     def __init__(self,size):
@@ -62,5 +63,5 @@ class ReplayBuffer(object):
             batch_size - 배치사이즈(int)
         출력 - self._encode_sample 참조
         '''
-        idxes = np.random.choice(range(self.__len__),batch_size)
+        idxes = np.random.choice(range(self.__len__()),batch_size)
         return self._encode_sample(idxes)
