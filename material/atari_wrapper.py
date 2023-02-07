@@ -104,42 +104,37 @@ class EpisodicLifeEnv(gym.Wrapper):
 
 
 class EpisodicLifeEnv2(gym.Wrapper):
-    def __init__(self, env):
-        """Make 0 life == end-of-episode, but only reset on true game over.
-        Done by DeepMind for the DQN and co. since it helps value estimation.
-        """
+    def __init__(self, env, full_game=True):
         gym.Wrapper.__init__(self, env)
         self.lives = 5
         self.was_real_done = True
-
+        self.full_game=full_game
+        #print(f'Full game: {self.full_game}')
+        #print(f'Initial life: {self.env.unwrapped.ale.lives()}')
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
-        #self.was_real_done = done
-        # check current lives, make loss of life terminal,
-        # then update lives to handle bonus lives
-        lives = self.env.unwrapped.ale.lives()
-        #if lives < self.lives and lives > 0:
-            # for Qbert sometimes we stay in lives == 0 condition for a few frames
-            # so it's important to keep lives > 0, so that we only reset once
-            # the environment advertises done.
-            #done = True
-        # auto matically shot when One-life lost
-        if self.lives < self.env.unwrapped.ale.lives():
-            _,_,_,_ = env.step(1)
+        if self.full_game: # 5 life full game
+            obs, reward, done, info = self.env.step(action)
+            lives = self.env.unwrapped.ale.lives()
+            #if self.lives < self.env.unwrapped.ale.lives():
+            if self.env.unwrapped.ale.lives() < self.lives:
+                _,_,_,_ = self.env.step(1) # auto fire
+                self.lives = self.env.unwrapped.ale.lives()
+            if lives == 0:
+                self.was_real_done=True
+            return obs, reward, done, info
+        else: # 1 life die -> game finished
+            obs, reward, done, info = self.env.step(action)
+            self.was_real_done = done
+            lives = self.env.unwrapped.ale.lives()
+            if lives < self.lives and lives > 0:
+                done = True
             self.lives = lives
-        if lives == 0:
-            self.was_real_done=True
-        return obs, reward, done, info
-
+            return obs, reward, done, info
+            
     def reset(self, **kwargs):
-        """Reset only when lives are exhausted.
-        This way all states are still reachable even though lives are episodic,
-        and the learner need not know about any of this behind-the-scenes.
-        """
         if self.was_real_done:
             obs = self.env.reset(**kwargs)
         else:
-            # no-op step to advance from terminal/lost life state
             obs, _, _, _ = self.env.step(0)
         self.lives = self.env.unwrapped.ale.lives()
         return obs

@@ -1,11 +1,11 @@
 autorom==0.4.2
 atari_py==0.2.9
 pandas==1.4.2
-gym==0.21.0
-gym[atari,accept-rom-license]==0.21.0
+gym==0.23.0
+gym[atari,accept-rom-license]==0.23.0
 torchvision==0.9.1
 matplotlib==3.5.2
 scikit-learn==0.24.0
 opencv-python==4.6.0.66
 psutil==5.9.1
-ffmpeg==1.4.1
+#ffmpeg==1.4.1
