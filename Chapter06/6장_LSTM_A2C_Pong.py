@@ -60,7 +60,7 @@ class PreprocessAtariObs(ObservationWrapper):
         """A gym wrapper that crops, scales image into the desired shapes and grayscales it."""
         ObservationWrapper.__init__(self, env)
 
-        self.img_size = (1, 64, 64)
+        self.img_size = (1, 42, 42)
         self.observation_space = Box(0.0, 1.0, self.img_size,dtype=np.float32)
 
     def _to_gray_scale(self, rgb, channel_weights=[0.7, 0.1, 0.2]):
@@ -300,7 +300,7 @@ def train(rank,args,shared_agent):
 
         # Training log
         print(f'|프로세스|{rank}|   >>>   Reward/Episode: {total_reward}/{ep}   Time: {time.strftime("%Hh %Mm %Ss",time.gmtime(finish))}') 
-        if np.mean(reward_record[-3:]) >= 20 and total_reward >= 20:
+        if np.mean(reward_record[-3:]) >= 15 and total_reward >= 15:
             best_agent = copy.deepcopy(shared_agent)
             print(f" 프로세스: {rank}   >>>   보상: {np.mean(reward_record[-3:])}")
             print(f"학습종료")

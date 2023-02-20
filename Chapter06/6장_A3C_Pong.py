@@ -262,7 +262,7 @@ def train(rank,args,shared_agent):
 
         # Training log
         print(f'|프로세스|{rank}|   >>>   Reward/Episode: {total_reward}/{ep}   Time: {time.strftime("%Hh %Mm %Ss",time.gmtime(finish))}') 
-        if np.mean(reward_record[-3:]) >= 3 and total_reward >= 3:
+        if np.mean(reward_record[-3:]) >= 10 and total_reward >= 10:
             best_agent = copy.deepcopy(shared_agent)
             print(f" 프로세스: {rank}   >>>   보상: {np.mean(reward_record[-3:])}")
             print(f"학습종료")
