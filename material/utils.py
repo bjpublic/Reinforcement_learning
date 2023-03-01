@@ -12,5 +12,14 @@ def discounted_reward(rewards,gamma=0.99):
         target_value.insert(0, discounted_reward)
     return target_value
     
+def FIFO(element, array, length=400):
+    if len(array) < length:
+        array.append(element)
+    else:
+        array = array[1:]
+        array.append(element)
+    return array
+
+
 #def moving_average(x, span=100):
 #    return pd.DataFrame({'x': np.asarray(x)}).x.ewm(span=span).mean().values
