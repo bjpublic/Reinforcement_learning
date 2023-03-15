@@ -11,6 +11,14 @@ def discounted_reward(rewards,gamma=0.99):
         discounted_reward = reward + discounted_reward * gamma
         target_value.insert(0, discounted_reward)
     return target_value
+
+#def discounted_reward(rewards,next_values,dones,gamma=0.99):
+#    target_value = []
+#    discounted_reward = next_values[-1]*dones[-1]
+#    for reward, next_value, done in zip(reversed(rewards),reversed(next_values),reversed(dones)):
+#        discounted_reward = reward + next_value*done*discounted_reward * gamma
+#        target_value.insert(0, discounted_reward)
+#    return target_value    
     
 def FIFO(element, array, length=400):
     if len(array) < length:
