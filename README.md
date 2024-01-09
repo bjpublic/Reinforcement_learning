@@ -54,5 +54,9 @@ conda install -c conda-forge pyglet
 complexhhs@gmail.com
 
 
+## 업데이트
+---
+- 2024-01-09 Chapter.04 절벽걷기 eligibility 코드오류 수
+
 ## Authors and acknowledgment
 Show your appreciation to those who have contributed to the project.
